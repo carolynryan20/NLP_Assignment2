@@ -1,0 +1,58 @@
+Assignment 2
+Corpus Processing System
+
+The ability to process corpora of varying types is an essential NLP task. In this assignment, you will develop a system that ingests a text file, tokenizes the content at the sentence and word level, and builds and evaluates unigram, bigram and trigram language models. Your code will implement a test/training framework, the collection and computation of language model statistics, perplexity intrinsic evaluation and the ability to provide the Maximum Likelihood Estimate (MLE) of unseen data.
+
+Part 1
+
+Ingest the text file "HW2_InputFile.txt", tokenize at the sentence and word level (link to NLTK libraries below). Provide the following descriptive statistics of the input text file: (1) number of sentences; (2) total number of words; (3) total number of unique words and their frequency rank (Please visualize with a table or graph). Note that you will likely have to spend time cleaning up the data based either on the data itself or by decisions made by the tokenizer you use. You should also be inserting beginning and end of sentence tags for your ngram calculations - keep a log of changes.
+
+Part 2
+
+Split the data into 70/30, 80/20 and 90/10 train/test splits. For each of the three splits, create a unigram, bigram and trigram language model from the training data and calculate the Perplexity of the test set. For unseen ngrams in the test set, use 0.000001 as an arbitrary value (no smoothing, unless you would like to attempt the extra credit option in Part 4).
+
+Part 3
+
+Using your lowest perplexity unigram, bigram and trigram language models, evaluate the following sentences and provide the MLE for each (again, using 0.000001 as an arbitrary value for unseen ngrams):
+
+(1) Please return the television to Mr. Lynch on Sunday.
+
+(2) Odysseus was 17 when he first had novocain.
+
+(3) Johnny Cash was drowning in imagery of dusty roads at night.
+
+(4) While wearing blue shoes, I took a detour to find Laura Frost, the Wizard of Python Empire.
+
+(5) I built a box for the rabbits.
+
+(6) She was wearing a leather jacket.
+
+(7) I was born in 1976 and graduated high school in 1990.
+
+(8) That explanation is irrelevant to surrealists, existentialists and film snobs for purposes of interpretation, narrative from, humorous asides and soap.
+
+(9) Sentence of your choosing.
+
+(10) Another sentence of your choosing.
+
+Part 4 (extra credit)
+
+Implement a smoothing technique to address zero values. Fully document your approach.
+
+
+
+Submission
+
+Submit the following via Moodle by 11:55 PM on Monday, October 9, 2017 (submission will be open until Tuesday, October 10, 2017 by 11:55 PM for 50% credit):
+
+(1) Your system source code which should (a) ingest, tokenize, and make multiple train/test splits of the input file; (b) create unigram, bigram and trigram language models for each training split and test the corresponding test split (c) output the perplexity of each test run; and (d) allow for the evaluation of new sentences (user input or from a test file) that outputs the MLE of the sentence(s).
+
+(2) A system write-up that contains (a) the descriptive statistics in Part 1; (b) a data scrubbing log; (c) a table of perplexities for the nine models; and (d) a table of the MLEs of the test sentences in Part 3. Please include brief commentary on each item (e.g., what changes you made, did the perplexities conform to expectations or not, what impact did the different train/test splits have on the results and potential generalizability of your model, etc.).
+
+As indicated in the syllabus, if you so choose, you can work with one person. If you collaborate in this way, submit only one version of the code and write up (indicating the collaborating pairing in the comments of the code).
+
+In terms of the code, feel free to use any libraries you are comfortable with. Additionally, I have no preconceived notion about how the code should be organized for this assignment. This said you should (always) strive for clear, intuitive, well commented code – for example, it should be clear where the calculation of probabilities is happening and where perplexity is being calculated. If the code is not performing as it should and your code is not clear, intuitive or well commented, you run the risk of losing more points if the grader or I can’t figure it out.
+
+Start early, divide, conquer and asks lots of questions.
+
+Notes - NLTK has some handy things to help. See generally, http://www.nltk.org/index.html
