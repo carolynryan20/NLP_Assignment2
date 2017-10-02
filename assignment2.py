@@ -2,9 +2,8 @@
 
 def main():
     f = open("HW2_InputFile.txt", "r")
-    for line in f:
-        print(line)
-
+    line = f.readline()
+    print(line)
     f.close()
 
 
