@@ -26,7 +26,9 @@ def main():
     print
     print("The number of sentences in the text is", len(sentence_tokens))
     print("The number of words in the text is", word_count(word_tokens))
-    print unique_word_dict
+    u_train_on_split(.7, word_tokens)
+    u_train_on_split(.8, word_tokens)
+    u_train_on_split(.9, word_tokens)
     f.close()
 
 def clean_corpus(corpus):
@@ -83,16 +85,40 @@ def word_count(word_tokens):
 def unique_words(word_tokens):
     unique = dict()
     for word in word_tokens:
-        if unique.get(word) and word.isalpha(): # dict ignores punctuation
-            unique[word] = unique[word] + 1
-        elif word.isalpha():
-            unique[word] = 1
+        word = word.lower()
+        if unique.get(word):
+            unique[word] = unique[word] + 1.0
+        else:
+            unique[word] = 1.0
     return unique
 
-def train_on_split(cut, tokens):
+def split_data(cut, tokens):
     # http://www.nltk.org/book/ch04.html
     cut = int(cut*len(tokens))
     training_data, test_data = tokens[:cut], tokens[cut:]
+    return training_data, test_data
+
+def u_train_on_split(cut, tokens):
+    training_data, test_data = split_data(cut, tokens)
+
+    # UNIGRAM
+    training_counts = unique_words(' '.join(training_data))
+    training_total = len(training_data)
+    for key, value in training_counts.items():
+        training_counts[key] = value/training_total
+
+    sentence_probs = []
+    for sentence in training_data:
+        prob = 1.0
+        for word in sentence:
+            if training_counts.get(word):
+                prob = prob*training_counts[word]
+            else:
+                prob = prob*.000001
+        sentence_probs.append(prob)
+
+    perplexity = sum(sentence_probs)**(-1/training_total)
+    print ("Unigram perplexity: " + str(perplexity))
 
 if __name__ == '__main__':
     main()
