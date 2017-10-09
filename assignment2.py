@@ -1,4 +1,5 @@
 import nltk
+from numpy import prod
 
 # Changes to HW2_InputFile:
     # The textfile used non-ascii apostrophes and quotations
@@ -16,19 +17,24 @@ def main():
 
     print("The number of sentences in the text is", len(sentence_tokens))
     print("The number of words in the text is", word_count(word_tokens))
-    u_train_on_split(.7, word_tokens)
-    u_train_on_split(.8, word_tokens)
-    u_train_on_split(.9, word_tokens)
+    u_train_on_split(.7, sentence_tokens)
+    u_train_on_split(.8, sentence_tokens)
+    u_train_on_split(.9, sentence_tokens)
+
+    b_train_on_split(.7, word_tokens)
+    b_train_on_split(.8, word_tokens)
+    b_train_on_split(.9, word_tokens)
     f.close()
 
 def clean_corpus(corpus):
     # Documentation on what we changed to the corpus
+    # TODO see why `` is appearing in the corpus????
     corpus = corpus.replace(".I ", ". I ")
     corpus = corpus.replace(".It ", ". It ")
     corpus = corpus.replace(".That ", ". That ")
     corpus = corpus.replace("Mr. ", "Mr ")
     corpus = corpus.replace("Dr. ", "Dr ")
-    corpus = corpus.replace("F.B.I", "FBI")
+    corpus = corpus.replace("F.B.I.", "FBI")
     corpus = corpus.replace("Catherine E.", "Catherine E")
     corpus = corpus.replace("ä", "a")
 
@@ -48,6 +54,11 @@ def clean_corpus(corpus):
     corpus = corpus.replace("he's", "he is")
     corpus = corpus.replace("Let's", "Let us")
 
+    # TODO add in markers for <s> and </s>
+    # corpus = "BEGINNING " + corpus
+    # corpus = corpus.replace(".", " ENDING BEGINNING")
+    # corpus = corpus.replace("!", " ENDING BEGINNING")
+    # corpus = corpus.replace("?", " ENDING BEGINNING")
     return corpus
 
 def tokenize_words(corpus):
@@ -57,7 +68,6 @@ def tokenize_words(corpus):
         word = word_tokens[word_index]
         if word == "'s":
             new_word_tokens[-1] += word
-            print("HERE",word_tokens[word_index])
         else:
             new_word_tokens.append(word)
     return new_word_tokens
@@ -90,27 +100,42 @@ def u_train_on_split(cut, tokens):
     training_data, test_data = split_data(cut, tokens)
 
     # UNIGRAM
-    training_counts = unique_words(' '.join(training_data))
-    training_total = len(training_data)
+    training_counts = unique_words(' '.join(training_data)) # TODO Do we want to do this as sentence splitting?, do we want to tokenize after this step
+    training_total = len(' '.join(training_data))
     for key, value in training_counts.items():
         training_counts[key] = value/training_total
 
     sentence_probs = []
-    for sentence in training_data:
+    for sentence in test_data:
         prob = 1.0
         for word in sentence:
             if training_counts.get(word):
-                prob = prob*training_counts[word]
+                prob = prob * training_counts[word]
             else:
-                prob = prob*.000001
+                prob = prob * .000001
         sentence_probs.append(prob)
 
-    perplexity = sum(sentence_probs)**(-1/training_total)
+    perplexity = sum(sentence_probs)**(-1/training_total) # TODO ask about this equation?
     print ("Unigram perplexity (" + str(round(cut*100)) + '/' + str(round((1-cut)*100)) + ' split):'+ str(perplexity))
 
 def b_train_on_split(cut, tokens):
     training_data, test_data = split_data(cut, tokens)
-    print(training_data, test_data)
+
+    bigram_count = dict()
+    for i in range(len(training_data)-1):
+        key = training_data[i].lower()+" "+training_data[i+1].lower()
+        if key in bigram_count:
+            bigram_count[key] += 1
+        else:
+            bigram_count[key] = 1
+    print(bigram_count)
+
+    for i in range(len(test_data)-1):
+        prob = 1.0
+
+        #TODO bigram probabilities
+        pass
+
 
 if __name__ == '__main__':
     main()
