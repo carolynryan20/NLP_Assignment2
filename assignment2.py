@@ -1,6 +1,5 @@
 import nltk
-from decimal import *
-from numpy import prod
+from decimal import Decimal
 
 # Changes to HW2_InputFile:
     # The textfile used non-ascii apostrophes and quotations
@@ -14,17 +13,23 @@ def main():
     sentence_tokens = nltk.tokenize.sent_tokenize(corpus) # Doesn't work on 'F.B.I agent Dale' splits into two sentences
     word_tokens = tokenize_words(corpus)
     unique_word_dict = unique_words(word_tokens)
-    print(word_tokens)
+    # print(word_tokens)
 
     print("The number of sentences in the text is", len(sentence_tokens))
     print("The number of words in the text is", word_count(word_tokens))
     u_train_on_split(.7, sentence_tokens)
     u_train_on_split(.8, sentence_tokens)
     u_train_on_split(.9, sentence_tokens)
+    print()
+    b_train_on_split(.7, sentence_tokens)
+    b_train_on_split(.8, sentence_tokens)
+    b_train_on_split(.9, sentence_tokens)
 
-    b_train_on_split(.7, word_tokens)
-    b_train_on_split(.8, word_tokens)
-    b_train_on_split(.9, word_tokens)
+    print()
+    t_train_on_split(.7, sentence_tokens)
+    t_train_on_split(.8, sentence_tokens)
+    t_train_on_split(.9, sentence_tokens)
+
     f.close()
 
 def clean_corpus(corpus):
@@ -114,29 +119,80 @@ def u_train_on_split(cut, tokens):
                 prob = prob * Decimal(training_counts[word])
             else:
                 prob = prob * Decimal(.000001)
-        print("{} prob on sentence {}".format(prob, sentence))
+        # print("{} prob on sentence {}".format(prob, sentence))
         sentence_probs.append(prob**(Decimal(-1/len(sentence))))
 
     perplexity = sum(sentence_probs)/len(test_data)
-    print ("Unigram perplexity (" + str(round(cut*100)) + '/' + str(round((1-cut)*100)) + ' split):'+ str(perplexity))
+    print("Unigram perplexity ({}/{} split): {}".format(
+         round(cut*100), round((1-cut)*100), round(perplexity,4)))
 
 def b_train_on_split(cut, tokens):
     training_data, test_data = split_data(cut, tokens)
+    training_word_tokens = tokenize_words(' '.join(training_data))
+    training_total = len(training_word_tokens)
 
     bigram_count = dict()
-    for i in range(len(training_data)-1):
-        key = training_data[i].lower()+" "+training_data[i+1].lower()
+    for i in range(len(training_word_tokens)-1):
+        key = training_word_tokens[i].lower()+" "+training_word_tokens[i+1].lower()
         if key in bigram_count:
             bigram_count[key] += 1
         else:
             bigram_count[key] = 1
     # print(bigram_count)
 
-    for i in range(len(test_data)-1):
-        prob = 1.0
+    for key,value in bigram_count.items():
+        bigram_count[key] = value/training_total
 
-        #TODO bigram probabilities
-        pass
+    sentence_perplexity = []
+    for sentence in test_data:
+        prob = Decimal(1.0)
+        word_tokens = tokenize_words(sentence)
+        for word_index in range(len(word_tokens) -1):
+            bigram = word_tokens[word_index] + " " + word_tokens[word_index + 1]
+            if bigram_count.get(bigram):
+                prob = prob * Decimal(bigram_count[bigram])
+            else:
+                prob = prob * Decimal(.000001)
+        # print("{} prob on sentence {}".format(prob, sentence))
+        sentence_perplexity.append(prob**(Decimal(-1/len(sentence))))
+
+    perplexity = sum(sentence_perplexity) / len(test_data)
+    print("Bigram perplexity ({}/{} split): {}".format(
+        round(cut * 100), round((1 - cut) * 100), round(perplexity, 4)))
+
+def t_train_on_split(cut, tokens):
+    # TODO trigrams
+    training_data, test_data = split_data(cut, tokens)
+    training_word_tokens = tokenize_words(' '.join(training_data))
+    training_total = len(training_word_tokens)
+
+    trigram_count = dict()
+    for i in range(len(training_word_tokens) - 2):
+        key = training_word_tokens[i].lower() + " " + training_word_tokens[i + 1].lower() + " " + training_word_tokens[i+2]
+        if key in trigram_count:
+            trigram_count[key] += 1
+        else:
+            trigram_count[key] = 1
+
+    for key,value in trigram_count.items():
+        trigram_count[key] = value/training_total
+
+    sentence_perplexity = []
+    for sentence in test_data:
+        prob = Decimal(1.0)
+        word_tokens = tokenize_words(sentence)
+        for word_index in range(len(word_tokens) - 2):
+            trigram = word_tokens[word_index] + " " + word_tokens[word_index + 1] + " " + training_word_tokens[word_index+2]
+            if trigram_count.get(trigram):
+                prob = prob * Decimal(trigram_count[trigram])
+            else:
+                prob = prob * Decimal(.000001)
+        # print("{} prob on sentence {}".format(prob, sentence))
+        sentence_perplexity.append(prob ** (Decimal(-1 / len(sentence))))
+
+    perplexity = sum(sentence_perplexity) / len(test_data)
+    print("Trigram perplexity ({}/{} split): {}".format(
+        round(cut * 100), round((1 - cut) * 100), round(perplexity, 4)))
 
 
 if __name__ == '__main__':
