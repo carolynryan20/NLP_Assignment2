@@ -1,4 +1,5 @@
 import nltk
+from decimal import *
 from numpy import prod
 
 # Changes to HW2_InputFile:
@@ -100,27 +101,23 @@ def u_train_on_split(cut, tokens):
     training_data, test_data = split_data(cut, tokens)
 
     # UNIGRAM
-    training_counts = unique_words(' '.join(training_data)) # TODO Do we want to do this as sentence splitting?, do we want to tokenize after this step
+    training_counts = unique_words(' '.join(training_data))
     training_total = len(' '.join(training_data))
     for key, value in training_counts.items():
         training_counts[key] = value/training_total
 
     sentence_probs = []
     for sentence in test_data:
-        prob = 1.0
+        prob = Decimal(1.0)
         for word in sentence:
             if training_counts.get(word):
-                prob = prob * training_counts[word]
+                prob = prob * Decimal(training_counts[word])
             else:
-                prob = prob * .000001
-        # print("{} prob on sentence {}".format(prob, sentence))
-        if prob == 0:
-            # sentence_probs.append(0)
-            sentence_probs.append(training_total) #Poor perplexity approaches vocab size?????
-        else:
-            sentence_probs.append(prob**(-1/len(sentence)))
+                prob = prob * Decimal(.000001)
+        print("{} prob on sentence {}".format(prob, sentence))
+        sentence_probs.append(prob**(Decimal(-1/len(sentence))))
 
-    perplexity = sum(sentence_probs)/len(test_data) # TODO ask about this equation?
+    perplexity = sum(sentence_probs)/len(test_data)
     print ("Unigram perplexity (" + str(round(cut*100)) + '/' + str(round((1-cut)*100)) + ' split):'+ str(perplexity))
 
 def b_train_on_split(cut, tokens):
