@@ -113,9 +113,14 @@ def u_train_on_split(cut, tokens):
                 prob = prob * training_counts[word]
             else:
                 prob = prob * .000001
-        sentence_probs.append(prob)
+        # print("{} prob on sentence {}".format(prob, sentence))
+        if prob == 0:
+            # sentence_probs.append(0)
+            sentence_probs.append(training_total) #Poor perplexity approaches vocab size?????
+        else:
+            sentence_probs.append(prob**(-1/len(sentence)))
 
-    perplexity = sum(sentence_probs)**(-1/training_total) # TODO ask about this equation?
+    perplexity = sum(sentence_probs)/len(test_data) # TODO ask about this equation?
     print ("Unigram perplexity (" + str(round(cut*100)) + '/' + str(round((1-cut)*100)) + ' split):'+ str(perplexity))
 
 def b_train_on_split(cut, tokens):
@@ -128,7 +133,7 @@ def b_train_on_split(cut, tokens):
             bigram_count[key] += 1
         else:
             bigram_count[key] = 1
-    print(bigram_count)
+    # print(bigram_count)
 
     for i in range(len(test_data)-1):
         prob = 1.0
