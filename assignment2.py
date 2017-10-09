@@ -10,34 +10,39 @@ def main():
     f = open("HW2_InputFile.txt", "r")
     line = f.readline()
     corpus = clean_corpus(line)
-    sentence_tokens = nltk.tokenize.sent_tokenize(corpus) # Doesn't work on 'F.B.I agent Dale' splits into two sentences
+    sentence_tokens = nltk.tokenize.sent_tokenize(corpus)
     word_tokens = tokenize_words(corpus)
     unique_word_dict = unique_words(word_tokens)
-    # print(word_tokens)
+    bt_sent_tokens = []
+    for i in range(len(sentence_tokens)):
+        bt_sent_tokens.append( "BEGINNING " + sentence_tokens[i][:-1] + " ENDING")
+
 
     print("The number of sentences in the text is", len(sentence_tokens))
     print("The number of words in the text is", word_count(word_tokens))
+
+    # TODO print as table or graph
+    print("The unique words and frequency rate:", unique_word_dict)
+
     u_train_on_split(.7, sentence_tokens)
     u_train_on_split(.8, sentence_tokens)
     u_train_on_split(.9, sentence_tokens)
     print()
-    b_train_on_split(.7, sentence_tokens)
-    b_train_on_split(.8, sentence_tokens)
-    best_bigram = b_train_on_split(.9, sentence_tokens)
+    b_train_on_split(.7, bt_sent_tokens)
+    b_train_on_split(.8, bt_sent_tokens)
+    b_train_on_split(.9, bt_sent_tokens)
 
     print()
-    t_train_on_split(.7, sentence_tokens)
-    t_train_on_split(.8, sentence_tokens)
-    t_train_on_split(.9, sentence_tokens)
+    t_train_on_split(.7, bt_sent_tokens)
+    t_train_on_split(.8, bt_sent_tokens)
+    t_train_on_split(.9, bt_sent_tokens)
 
     print()
-    sentence_probabilities(best_bigram)
-
+    sentence_perplexity(sentence_tokens)
     f.close()
 
 def clean_corpus(corpus):
     # Documentation on what we changed to the corpus
-    # TODO see why `` is appearing in the corpus????
     corpus = corpus.replace(".I ", ". I ")
     corpus = corpus.replace(".It ", ". It ")
     corpus = corpus.replace(".That ", ". That ")
@@ -62,12 +67,8 @@ def clean_corpus(corpus):
     corpus = corpus.replace("He's", "He is") # sometimes awkward tense, as should be 'he has' in some cases
     corpus = corpus.replace("he's", "he is")
     corpus = corpus.replace("Let's", "Let us")
+    corpus = corpus.replace("\"", "")
 
-    # TODO add in markers for <s> and </s>
-    # corpus = "BEGINNING " + corpus
-    # corpus = corpus.replace(".", " ENDING BEGINNING")
-    # corpus = corpus.replace("!", " ENDING BEGINNING")
-    # corpus = corpus.replace("?", " ENDING BEGINNING")
     return corpus
 
 def tokenize_words(corpus):
@@ -105,10 +106,11 @@ def split_data(cut, tokens):
     training_data, test_data = tokens[:cut], tokens[cut:]
     return training_data, test_data
 
-def u_train_on_split(cut, tokens):
+def u_train_on_split(cut, tokens, sentence=None):
     training_data, test_data = split_data(cut, tokens)
+    if sentence:
+        test_data = [sentence]
 
-    # UNIGRAM
     training_counts = unique_words(' '.join(training_data))
     training_total = len(' '.join(training_data))
     for key, value in training_counts.items():
@@ -117,7 +119,8 @@ def u_train_on_split(cut, tokens):
     sentence_probs = []
     for sentence in test_data:
         prob = Decimal(1.0)
-        for word in sentence:
+        word_tokens = tokenize_words(sentence)
+        for word in word_tokens:
             if training_counts.get(word):
                 prob = prob * Decimal(training_counts[word])
             else:
@@ -128,10 +131,11 @@ def u_train_on_split(cut, tokens):
     print("Unigram perplexity ({}/{} split): {}".format(
          round(cut*100), round((1-cut)*100), round(perplexity, 5)))
 
-    return training_counts
-
-def b_train_on_split(cut, tokens):
+def b_train_on_split(cut, tokens, sentence=None):
     training_data, test_data = split_data(cut, tokens)
+    if sentence:
+        test_data = [sentence]
+
     training_word_tokens = tokenize_words(' '.join(training_data))
     training_total = len(training_word_tokens)
 
@@ -142,7 +146,6 @@ def b_train_on_split(cut, tokens):
             bigram_count[key] += 1
         else:
             bigram_count[key] = 1
-    # print(bigram_count)
 
     for key,value in bigram_count.items():
         bigram_count[key] = value/training_total
@@ -163,10 +166,11 @@ def b_train_on_split(cut, tokens):
     print("Bigram perplexity ({}/{} split): {}".format(
         round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
 
-    return bigram_count
-
-def t_train_on_split(cut, tokens):
+def t_train_on_split(cut, tokens, sentence=None):
     training_data, test_data = split_data(cut, tokens)
+    if sentence:
+        test_data = [sentence]
+
     training_word_tokens = tokenize_words(' '.join(training_data))
     training_total = len(training_word_tokens)
 
@@ -196,27 +200,21 @@ def t_train_on_split(cut, tokens):
     perplexity = sum(sentence_perplexity) / len(test_data)
     print("Trigram perplexity ({}/{} split): {}".format(
         round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
-    return trigram_count
 
-def sentence_probabilities(best_bigram):
+def sentence_perplexity(sentence_tokens):
     f = open("sentences.txt", "r")
-    all_lines = f.readlines()
-    clean_lines = clean_corpus(' '.join(all_lines))
-    sentence_tokens = nltk.tokenize.sent_tokenize(clean_lines)
+    bt_sent_tokens = []
+    for i in range(len(sentence_tokens)):
+        bt_sent_tokens.append("BEGINNING "+sentence_tokens[i][:-1] + " ENDING")
 
-    for sentence in sentence_tokens:
-        prob = Decimal(1.0)
-        word_tokens = tokenize_words(sentence)
-        for word_index in range(len(word_tokens) - 1):
-            bigram = word_tokens[word_index] + " " + word_tokens[word_index + 1]
-            if best_bigram.get(bigram):
-                prob = prob * Decimal(best_bigram[bigram])
-            else:
-                prob = prob * Decimal(.000001)
-        perplexity = prob ** (Decimal(-1 / len(sentence)))
-        print("Perplexity is {} for {}".format(round(perplexity, 5), sentence))
+    for line in f.readlines():
+        print()
+        print(line[:-1])
+        u_train_on_split(.9, sentence_tokens, line)
+        b_train_on_split(.9, bt_sent_tokens, line)
+        t_train_on_split(.9, bt_sent_tokens, line)
+
     f.close()
-
 
 if __name__ == '__main__':
     main()
