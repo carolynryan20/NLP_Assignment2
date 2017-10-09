@@ -106,7 +106,7 @@ def u_train_on_split(cut, tokens):
         sentence_probs.append(prob)
 
     perplexity = sum(sentence_probs)**(-1/training_total)
-    print ("Unigram perplexity: " + str(perplexity))
+    print ("Unigram perplexity (" + str(round(cut*100)) + '/' + str(round((1-cut)*100)) + ' split):'+ str(perplexity))
 
 def b_train_on_split(cut, tokens):
     training_data, test_data = split_data(cut, tokens)
