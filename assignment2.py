@@ -12,6 +12,7 @@ def main():
     sentence_tokens = nltk.tokenize.sent_tokenize(corpus) # Doesn't work on 'F.B.I agent Dale' splits into two sentences
     word_tokens = tokenize_words(corpus)
     unique_word_dict = unique_words(word_tokens)
+    print(word_tokens)
 
     print("The number of sentences in the text is", len(sentence_tokens))
     print("The number of words in the text is", word_count(word_tokens))
@@ -52,17 +53,13 @@ def clean_corpus(corpus):
 def tokenize_words(corpus):
     word_tokens = nltk.word_tokenize(corpus)
     new_word_tokens = []
-    wordAlreadyAdded = False
     for word_index in range(len(word_tokens)):
         word = word_tokens[word_index]
-        if word == "'":
-            new_word_tokens[-1] += word + word_tokens[word_index+1]
-            wordAlreadyAdded = True
-        elif wordAlreadyAdded:
-            wordAlreadyAdded = False
+        if word == "'s":
+            new_word_tokens[-1] += word
+            print("HERE",word_tokens[word_index])
         else:
             new_word_tokens.append(word)
-            wordAlreadyAdded = False
     return new_word_tokens
 
 def word_count(word_tokens):
@@ -110,6 +107,10 @@ def u_train_on_split(cut, tokens):
 
     perplexity = sum(sentence_probs)**(-1/training_total)
     print ("Unigram perplexity: " + str(perplexity))
+
+def b_train_on_split(cut, tokens):
+    training_data, test_data = split_data(cut, tokens)
+    print(training_data, test_data)
 
 if __name__ == '__main__':
     main()
