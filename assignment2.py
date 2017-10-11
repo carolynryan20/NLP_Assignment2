@@ -17,7 +17,6 @@ def main():
     for i in range(len(sentence_tokens)):
         bt_sent_tokens.append( "BEGINNING " + sentence_tokens[i][:-1] + " ENDING")
 
-
     print("The number of sentences in the text is", len(sentence_tokens))
     print("The number of words in the text is", word_count(word_tokens))
 
@@ -106,17 +105,18 @@ def split_data(cut, tokens):
     training_data, test_data = tokens[:cut], tokens[cut:]
     return training_data, test_data
 
-def u_train_on_split(cut, tokens, sentence=None):
+def u_train_on_split(cut, tokens, test_sentence=None):
     training_data, test_data = split_data(cut, tokens)
-    if sentence:
-        test_data = [sentence]
+    if test_sentence:
+        test_data = [test_sentence]
 
     training_counts = unique_words(' '.join(training_data))
     training_total = len(' '.join(training_data))
     for key, value in training_counts.items():
         training_counts[key] = value/training_total
 
-    sentence_probs = []
+    sentence_perplexity = []
+    sentence_probability = []
     for sentence in test_data:
         prob = Decimal(1.0)
         word_tokens = tokenize_words(sentence)
@@ -125,16 +125,20 @@ def u_train_on_split(cut, tokens, sentence=None):
                 prob = prob * Decimal(training_counts[word])
             else:
                 prob = prob * Decimal(.000001)
-        sentence_probs.append(prob**(Decimal(-1/len(sentence))))
+        sentence_perplexity.append(prob**(Decimal(-1/len(sentence))))
+        sentence_probability.append(prob)
 
-    perplexity = sum(sentence_probs)/len(test_data)
-    print("Unigram perplexity ({}/{} split): {}".format(
+    if test_sentence:
+        print("Unigram MLE is", sum(sentence_probability)/len(test_data))
+    else:
+        perplexity = sum(sentence_perplexity) / len(test_data)
+        print("Unigram perplexity ({}/{} split): {}".format(
          round(cut*100), round((1-cut)*100), round(perplexity, 5)))
 
-def b_train_on_split(cut, tokens, sentence=None):
+def b_train_on_split(cut, tokens, test_sentence=None):
     training_data, test_data = split_data(cut, tokens)
-    if sentence:
-        test_data = [sentence]
+    if test_sentence:
+        test_data = [test_sentence]
 
     training_word_tokens = tokenize_words(' '.join(training_data))
     training_total = len(training_word_tokens)
@@ -151,6 +155,7 @@ def b_train_on_split(cut, tokens, sentence=None):
         bigram_count[key] = value/training_total
 
     sentence_perplexity = []
+    sentence_probability = []
     for sentence in test_data:
         prob = Decimal(1.0)
         word_tokens = tokenize_words(sentence)
@@ -161,15 +166,19 @@ def b_train_on_split(cut, tokens, sentence=None):
             else:
                 prob = prob * Decimal(.000001)
         sentence_perplexity.append(prob**(Decimal(-1/len(sentence))))
+        sentence_probability.append(prob)
 
-    perplexity = sum(sentence_perplexity) / len(test_data)
-    print("Bigram perplexity ({}/{} split): {}".format(
-        round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
+    if test_sentence:
+        print("Bigram MLE is", sum(sentence_probability) / len(test_data))
+    else:
+        perplexity = sum(sentence_perplexity) / len(test_data)
+        print("Bigram perplexity ({}/{} split): {}".format(
+            round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
 
-def t_train_on_split(cut, tokens, sentence=None):
+def t_train_on_split(cut, tokens, test_sentence=None):
     training_data, test_data = split_data(cut, tokens)
-    if sentence:
-        test_data = [sentence]
+    if test_sentence:
+        test_data = [test_sentence]
 
     training_word_tokens = tokenize_words(' '.join(training_data))
     training_total = len(training_word_tokens)
@@ -186,6 +195,7 @@ def t_train_on_split(cut, tokens, sentence=None):
         trigram_count[key] = value/training_total
 
     sentence_perplexity = []
+    sentence_probability = []
     for sentence in test_data:
         prob = Decimal(1.0)
         word_tokens = tokenize_words(sentence)
@@ -195,11 +205,15 @@ def t_train_on_split(cut, tokens, sentence=None):
                 prob = prob * Decimal(trigram_count[trigram])
             else:
                 prob = prob * Decimal(.000001)
+        sentence_probability.append(prob)
         sentence_perplexity.append(prob ** (Decimal(-1 / len(sentence))))
 
-    perplexity = sum(sentence_perplexity) / len(test_data)
-    print("Trigram perplexity ({}/{} split): {}".format(
-        round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
+    if test_sentence:
+        print("Trigram MLE is", sum(sentence_probability) / len(test_data))
+    else:
+        perplexity = sum(sentence_perplexity) / len(test_data)
+        print("Trigram perplexity ({}/{} split): {}".format(
+            round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
 
 def sentence_perplexity(sentence_tokens):
     f = open("sentences.txt", "r")
@@ -218,3 +232,4 @@ def sentence_perplexity(sentence_tokens):
 
 if __name__ == '__main__':
     main()
+
