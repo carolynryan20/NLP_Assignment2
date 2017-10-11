@@ -1,5 +1,7 @@
 import nltk
 from decimal import Decimal
+import numpy as np 
+import matplotlib.pyplot as plt
 
 # Changes to HW2_InputFile:
     # The textfile used non-ascii apostrophes and quotations
@@ -21,7 +23,18 @@ def main():
     print("The number of words in the text is", word_count(word_tokens))
 
     # TODO print as table or graph
-    print("The unique words and frequency rate:", unique_word_dict)
+    # print("The unique words and frequency rate:", unique_word_dict)
+    # unique_word_dict = sorted(unique_word_dict.values())
+
+    objects = unique_word_dict.keys()
+    y_pos = np.arange(len(objects))
+    values = sorted(unique_word_dict.values())[::-1]
+
+    plt.bar(y_pos, values, align='center', alpha=0.5)
+    plt.xticks([])
+    plt.ylabel('Word Frequency')
+    plt.title('Word Frequency in Twin Peaks Review')
+
 
     u_train_on_split(.7, sentence_tokens)
     u_train_on_split(.8, sentence_tokens)
@@ -38,6 +51,7 @@ def main():
 
     print()
     sentence_perplexity(sentence_tokens)
+    plt.show()
     f.close()
 
 def clean_corpus(corpus):
