@@ -3,42 +3,48 @@ from decimal import Decimal
 import numpy as np 
 import matplotlib.pyplot as plt
 
-# Changes to HW2_InputFile:
-    # The textfile used non-ascii apostrophes and quotations
-    #   so we changed these to their ASCII counterparts
-
-
 def main():
+    '''
+    Open file, clean it, make and evaluate models, run sentence probability
+    :return: None
+    '''
     f = open("HW2_InputFile.txt", "r")
     line = f.readline()
     corpus = clean_corpus(line)
     sentence_tokens = nltk.tokenize.sent_tokenize(corpus)
     word_tokens = tokenize_words(corpus)
     unique_word_dict = unique_words(word_tokens)
-    bt_sent_tokens = []
-    for i in range(len(sentence_tokens)):
-        bt_sent_tokens.append( "BEGINNING " + sentence_tokens[i][:-1] + " ENDING")
 
     print("The number of sentences in the text is", len(sentence_tokens))
     print("The number of words in the text is", word_count(word_tokens))
 
-    # TODO print as table or graph
-    # print("The unique words and frequency rate:", unique_word_dict)
-    # unique_word_dict = sorted(unique_word_dict.values())
+    plot_word_freq(unique_word_dict)
 
-    objects = unique_word_dict.keys()
-    y_pos = np.arange(len(objects))
-    values = sorted(unique_word_dict.values())[::-1]
+    ngram_model_and_analysis(sentence_tokens)
 
-    plt.bar(y_pos, values, align='center', alpha=0.5)
-    plt.xticks([])
-    plt.ylabel('Word Frequency')
-    plt.title('Word Frequency in Twin Peaks Review')
+    print()
+    sentence_mle(sentence_tokens)
+    plt.show()
+    f.close()
 
 
+def ngram_model_and_analysis(sentence_tokens):
+    '''
+    Make unigram, bigram, trigram models with different cuts
+    :param sentence_tokens: A tokenized list of sentences
+    :return: None
+    '''
+
+    # Want beginning and ending symbols for our bigram and trigram models
+    bt_sent_tokens = []
+    for i in range(len(sentence_tokens)):
+        bt_sent_tokens.append( "BEGINNING " + sentence_tokens[i][:-1] + " ENDING")
+
+    print()
     u_train_on_split(.7, sentence_tokens)
     u_train_on_split(.8, sentence_tokens)
     u_train_on_split(.9, sentence_tokens)
+
     print()
     b_train_on_split(.7, bt_sent_tokens)
     b_train_on_split(.8, bt_sent_tokens)
@@ -49,13 +55,28 @@ def main():
     t_train_on_split(.8, bt_sent_tokens)
     t_train_on_split(.9, bt_sent_tokens)
 
-    print()
-    sentence_perplexity(sentence_tokens)
-    plt.show()
-    f.close()
+
+def plot_word_freq(unique_word_dict):
+    '''
+    Plot word frequencies, simple visualization with no word labels
+    :param unique_word_dict: Dictionary and count of all words in the corpus
+    :return: A plot of the word frequencies
+    '''
+    objects = unique_word_dict.keys()
+    y_pos = np.arange(len(objects))
+    values = sorted(unique_word_dict.values())[::-1]
+    plt.bar(y_pos, values, align='center', alpha=0.5)
+    plt.xticks([])
+    plt.ylabel('Word Frequency')
+    plt.title('Word Frequency in Twin Peaks Review')
+    return plt
 
 def clean_corpus(corpus):
-    # Documentation on what we changed to the corpus
+    '''
+    Documentation and replacement for adjustments we made to the corpus
+    :param corpus: A string of the corpus
+    :return: A cleaned version of the corpus, string
+    '''
     corpus = corpus.replace(".I ", ". I ")
     corpus = corpus.replace(".It ", ". It ")
     corpus = corpus.replace(".That ", ". That ")
@@ -85,6 +106,11 @@ def clean_corpus(corpus):
     return corpus
 
 def tokenize_words(corpus):
+    '''
+    Returns a list of all words and punctuations in the corpus
+    :param corpus: A string of the corpus
+    :return: A list of all words
+    '''
     word_tokens = nltk.word_tokenize(corpus)
     new_word_tokens = []
     for word_index in range(len(word_tokens)):
@@ -96,6 +122,11 @@ def tokenize_words(corpus):
     return new_word_tokens
 
 def word_count(word_tokens):
+    '''
+    Returns word count
+    :param word_tokens: A list of words
+    :return: int count of all words (non-inclusive to punctuation)
+    '''
     count = 0
     for word in word_tokens:
         if len(word) > 1 or word.isalpha(): # Discount punctuation
@@ -104,6 +135,11 @@ def word_count(word_tokens):
     return count
 
 def unique_words(word_tokens):
+    '''
+    Identify and count occurence of all words
+    :param word_tokens: A list of words
+    :return:  A dictionary of format word: count
+    '''
     unique = dict()
     for word in word_tokens:
         word = word.lower()
@@ -114,12 +150,25 @@ def unique_words(word_tokens):
     return unique
 
 def split_data(cut, tokens):
-    # http://www.nltk.org/book/ch04.html
+    '''
+    Splits data into training and test given a cut
+    http://www.nltk.org/book/ch04.html
+    :param cut: Float of desired training percentage
+    :param tokens: List to cut
+    :return: Training and test data
+    '''
     cut = int(cut*len(tokens))
     training_data, test_data = tokens[:cut], tokens[cut:]
     return training_data, test_data
 
 def u_train_on_split(cut, tokens, test_sentence=None):
+    '''
+    Unigram Model: Training and Evaluation (Perplexity or MLE)
+    :param cut: float of desired cut
+    :param tokens: List of words
+    :param test_sentence: (Optional) instead of test data use only sentence, get MLE not perplexity
+    :return: None
+    '''
     training_data, test_data = split_data(cut, tokens)
     if test_sentence:
         test_data = [test_sentence]
@@ -150,6 +199,13 @@ def u_train_on_split(cut, tokens, test_sentence=None):
          round(cut*100), round((1-cut)*100), round(perplexity, 5)))
 
 def b_train_on_split(cut, tokens, test_sentence=None):
+    '''
+    Bigram Model: Training and Evaluation (Perplexity or MLE)
+    :param cut: float of desired cut
+    :param tokens: List of words
+    :param test_sentence: (Optional) instead of test data use only sentence, get MLE not perplexity
+    :return: None
+    '''
     training_data, test_data = split_data(cut, tokens)
     if test_sentence:
         test_data = [test_sentence]
@@ -190,6 +246,13 @@ def b_train_on_split(cut, tokens, test_sentence=None):
             round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
 
 def t_train_on_split(cut, tokens, test_sentence=None):
+    '''
+    Trigram Model: Training and Evaluation (Perplexity or MLE)
+    :param cut: float of desired cut
+    :param tokens: List of words
+    :param test_sentence: (Optional) instead of test data use only sentence, get MLE not perplexity
+    :return: None
+    '''
     training_data, test_data = split_data(cut, tokens)
     if test_sentence:
         test_data = [test_sentence]
@@ -229,7 +292,12 @@ def t_train_on_split(cut, tokens, test_sentence=None):
         print("Trigram perplexity ({}/{} split): {}".format(
             round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
 
-def sentence_perplexity(sentence_tokens):
+def sentence_mle(sentence_tokens):
+    '''
+    Using input file of sentences.txt, calculate MLE of our best ngram models on those sentences
+    :param sentence_tokens: A list of all sentences in the corpus
+    :return: None
+    '''
     f = open("sentences.txt", "r")
     bt_sent_tokens = []
     for i in range(len(sentence_tokens)):
