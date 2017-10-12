@@ -169,34 +169,53 @@ def u_train_on_split(cut, tokens, test_sentence=None):
     :param test_sentence: (Optional) instead of test data use only sentence, get MLE not perplexity
     :return: None
     '''
+    # Training, test split, if in sentence evaluation, we want to use the sentence as the 'test'
     training_data, test_data = split_data(cut, tokens)
     if test_sentence:
         test_data = [test_sentence]
 
+    # Get word freq and adjust to percentage word/total
     training_counts = unique_words(' '.join(training_data))
     training_total = len(' '.join(training_data))
     for key, value in training_counts.items():
         training_counts[key] = value/training_total
 
+    perplexity, probability = u_calc_perplex_prob(training_counts, test_data)
+
+    # Want MLE if test sentence, else want perplexity
+    if test_sentence:
+        print("Unigram MLE is", probability)
+    else:
+        print("Unigram perplexity ({}/{} split): {}".format(
+         round(cut*100), round((1-cut)*100), round(perplexity, 5)))
+
+
+def u_calc_perplex_prob(unigram_count, test_data):
+    '''
+        Calculate perplexity and sentence probability
+        Calculate probability of the unigram, for individual sentences
+        Store both probability, and individual sentence perplexity
+        :param unigram_count: Dictionary of unigrams and their probabilities
+        :param test_data: Sentence(s) to run on
+        :return: Perplexity and probability
+    '''
     sentence_perplexity = []
     sentence_probability = []
     for sentence in test_data:
         prob = Decimal(1.0)
         word_tokens = tokenize_words(sentence)
         for word in word_tokens:
-            if training_counts.get(word):
-                prob = prob * Decimal(training_counts[word])
+            if unigram_count.get(word):
+                prob = prob * Decimal(unigram_count[word])
             else:
                 prob = prob * Decimal(.000001)
-        sentence_perplexity.append(prob**(Decimal(-1/len(sentence))))
+        sentence_perplexity.append(prob ** (Decimal(-1 / len(sentence))))
         sentence_probability.append(prob)
 
-    if test_sentence:
-        print("Unigram MLE is", sum(sentence_probability)/len(test_data))
-    else:
-        perplexity = sum(sentence_perplexity) / len(test_data)
-        print("Unigram perplexity ({}/{} split): {}".format(
-         round(cut*100), round((1-cut)*100), round(perplexity, 5)))
+    probability = sum(sentence_probability)/len(test_data)
+    perplexity = sum(sentence_perplexity) / len(test_data)
+    return perplexity, probability
+
 
 def b_train_on_split(cut, tokens, test_sentence=None):
     '''
@@ -213,37 +232,62 @@ def b_train_on_split(cut, tokens, test_sentence=None):
     training_word_tokens = tokenize_words(' '.join(training_data))
     training_total = len(training_word_tokens)
 
-    bigram_count = dict()
-    for i in range(len(training_word_tokens)-1):
-        key = training_word_tokens[i].lower()+" "+training_word_tokens[i+1].lower()
-        if key in bigram_count:
-            bigram_count[key] += 1
-        else:
-            bigram_count[key] = 1
+    bigram_count = make_bigram_freq(training_total, training_word_tokens)
 
-    for key,value in bigram_count.items():
-        bigram_count[key] = value/training_total
+    perplexity, probability = b_calc_perplex_prob(bigram_count, test_data)
 
+    if test_sentence:
+        print("Bigram MLE is", probability)
+    else:
+        print("Bigram perplexity ({}/{} split): {}".format(
+            round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
+
+
+def b_calc_perplex_prob(bigram_count, test_data):
+    '''
+    Calculate perplexity and sentence probability
+    :param bigram_count: Dictionary of bigrams and their probabilities
+    :param test_data: Sentence(s) to run on
+    :return: Perplexity and probability
+    '''
     sentence_perplexity = []
     sentence_probability = []
     for sentence in test_data:
         prob = Decimal(1.0)
         word_tokens = tokenize_words(sentence)
-        for word_index in range(len(word_tokens) -1):
+        for word_index in range(len(word_tokens) - 1):
             bigram = word_tokens[word_index] + " " + word_tokens[word_index + 1]
             if bigram_count.get(bigram):
                 prob = prob * Decimal(bigram_count[bigram])
             else:
                 prob = prob * Decimal(.000001)
-        sentence_perplexity.append(prob**(Decimal(-1/len(sentence))))
+        sentence_perplexity.append(prob ** (Decimal(-1 / len(sentence))))
         sentence_probability.append(prob)
 
-    if test_sentence:
-        print("Bigram MLE is", sum(sentence_probability) / len(test_data))
-    else:
-        perplexity = sum(sentence_perplexity) / len(test_data)
-        print("Bigram perplexity ({}/{} split): {}".format(
-            round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
+    probability = sum(sentence_probability) / len(test_data)
+    perplexity = sum(sentence_perplexity) / len(test_data)
+    return perplexity, probability
+
+
+def make_bigram_freq(training_total, training_word_tokens):
+    '''
+    Function to form and total bigram probabilities
+    :param training_total: N
+    :param training_word_tokens: List of all words to train on
+    :return: A dictionary of bigram:probability
+    '''
+    bigram_count = dict()
+    for i in range(len(training_word_tokens) - 1):
+        key = training_word_tokens[i].lower() + " " + training_word_tokens[i + 1].lower()
+        if key in bigram_count:
+            bigram_count[key] += 1
+        else:
+            bigram_count[key] = 1
+
+    for key, value in bigram_count.items():
+        bigram_count[key] = value / training_total
+    return bigram_count
+
 
 def t_train_on_split(cut, tokens, test_sentence=None):
     '''
@@ -260,37 +304,63 @@ def t_train_on_split(cut, tokens, test_sentence=None):
     training_word_tokens = tokenize_words(' '.join(training_data))
     training_total = len(training_word_tokens)
 
-    trigram_count = dict()
-    for i in range(len(training_word_tokens) - 2):
-        key = training_word_tokens[i].lower() + " " + training_word_tokens[i + 1].lower() + " " + training_word_tokens[i+2]
-        if key in trigram_count:
-            trigram_count[key] += 1
-        else:
-            trigram_count[key] = 1
+    trigram_count = make_trigram_freq(training_total, training_word_tokens)
 
-    for key,value in trigram_count.items():
-        trigram_count[key] = value/training_total
+    perplexity, probability = t_calc_perplex_prob(test_data, trigram_count)
 
+    if test_sentence:
+        print("Trigram MLE is", probability)
+    else:
+        print("Trigram perplexity ({}/{} split): {}".format(
+            round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
+
+
+def t_calc_perplex_prob(test_data, trigram_count):
+    '''
+    Calculate perplexity and sentence probability
+    :param trigram_count: Dictionary of trigrams and their probabilities
+    :param test_data: Sentence(s) to run on
+    :return: Perplexity and probability
+    '''
     sentence_perplexity = []
     sentence_probability = []
     for sentence in test_data:
         prob = Decimal(1.0)
         word_tokens = tokenize_words(sentence)
         for word_index in range(len(word_tokens) - 2):
-            trigram = word_tokens[word_index] + " " + word_tokens[word_index + 1] + " " + training_word_tokens[word_index+2]
+            trigram = word_tokens[word_index] + " " + word_tokens[word_index + 1] + " " + word_tokens[
+                word_index + 2]
             if trigram_count.get(trigram):
                 prob = prob * Decimal(trigram_count[trigram])
             else:
                 prob = prob * Decimal(.000001)
         sentence_probability.append(prob)
         sentence_perplexity.append(prob ** (Decimal(-1 / len(sentence))))
+    probability = sum(sentence_probability) / len(test_data)
+    perplexity = sum(sentence_perplexity) / len(test_data)
 
-    if test_sentence:
-        print("Trigram MLE is", sum(sentence_probability) / len(test_data))
-    else:
-        perplexity = sum(sentence_perplexity) / len(test_data)
-        print("Trigram perplexity ({}/{} split): {}".format(
-            round(cut * 100), round((1 - cut) * 100), round(perplexity, 5)))
+    return perplexity, probability
+
+
+def make_trigram_freq(training_total, training_word_tokens):
+    '''
+    Function to form and total trigram probabilities
+    :param training_total: N
+    :param training_word_tokens: List of all words to train on
+    :return: A dictionary of trigram:probability
+    '''
+    trigram_count = dict()
+    for i in range(len(training_word_tokens) - 2):
+        key = training_word_tokens[i].lower() + " " + training_word_tokens[i + 1].lower() + " " + training_word_tokens[
+            i + 2]
+        if key in trigram_count:
+            trigram_count[key] += 1
+        else:
+            trigram_count[key] = 1
+    for key, value in trigram_count.items():
+        trigram_count[key] = value / training_total
+    return trigram_count
+
 
 def sentence_mle(sentence_tokens):
     '''
